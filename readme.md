@@ -1,5 +1,7 @@
 # Commando
 
+[![wercker status](https://app.wercker.com/status/8fb474f2adee226f89217e8d669464b9/m "wercker status")](https://app.wercker.com/project/bykey/8fb474f2adee226f89217e8d669464b9)
+
 A simple bare bones CLI helper. 
 
 Features include:
