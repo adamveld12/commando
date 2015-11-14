@@ -18,7 +18,7 @@ func main(){
   app.Execute(os.Args[1:]...) 
   
   // or any of the following:
-  // app.Execute("add", 2, 3)
+  // app.Execute("add", "2", "3")
   // app.Execute("hello", "Steve")
   // app.Execute("sum", "1", "2")
   // app.Execute("ho", "false")

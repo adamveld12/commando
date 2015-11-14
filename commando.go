@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-type Command struct {
+type command struct {
 	Names       []string
 	Description string
 	handler     interface{}
 }
 
-func (cc Command) Match(commandString string) bool {
+func (cc command) match(commandString string) bool {
 	for _, str := range cc.Names {
 		if commandString == str {
 			return true
@@ -23,10 +23,12 @@ func (cc Command) Match(commandString string) bool {
 	return false
 }
 
+// CommandMux manages command registration
 type CommandMux struct {
-	commands []Command
+	commands []command
 }
 
+// New creates a new CommandMux instance
 func New() *CommandMux {
 	cMux := &CommandMux{}
 	cMux.Add("help h --help", "Displays usages", func() {
@@ -36,6 +38,7 @@ func New() *CommandMux {
 	return cMux
 }
 
+// Usage returns a string with the command, argument types and description for each handler
 func (c *CommandMux) Usage() string {
 	usageStr := "Usage:\n"
 	for _, command := range c.commands {
@@ -57,6 +60,7 @@ func (c *CommandMux) Usage() string {
 	return usageStr
 }
 
+// Add registers a new handler with the specified names (separated by spaces), description and handler func
 func (c *CommandMux) Add(names, description string, handlerFunc interface{}) {
 	funcType := reflect.TypeOf(handlerFunc)
 
@@ -64,7 +68,7 @@ func (c *CommandMux) Add(names, description string, handlerFunc interface{}) {
 		panic("Didn't pass a func")
 	}
 
-	command := Command{strings.Split(names, " "), description, handlerFunc}
+	command := command{strings.Split(names, " "), description, handlerFunc}
 	c.commands = append(c.commands, command)
 }
 
@@ -83,7 +87,7 @@ func (c *CommandMux) Execute(args ...string) error {
 	}
 
 	for _, cDef := range c.commands {
-		if cDef.Match(commandString) {
+		if cDef.match(commandString) {
 			handler := cDef.handler
 			return executeHandler(commandString, handler, commandArgs)
 		}
