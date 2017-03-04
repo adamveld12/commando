@@ -4,6 +4,8 @@
 [![Go Walker](http://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/adamveld12/commando)
 [![Gocover](http://gocover.io/_badge/github.com/adamveld12/commando)](http://gocover.io/github.com/adamveld12/commando)
 [![Go Report Card](https://goreportcard.com/badge/github.com/adamveld12/commando)](https://goreportcard.com/report/github.com/adamveld12/commando)
+
+
 [![wercker status](https://app.wercker.com/status/8fb474f2adee226f89217e8d669464b9/m "wercker status")](https://app.wercker.com/project/bykey/8fb474f2adee226f89217e8d669464b9)
 
 A simple bare bones CLI helper.
@@ -47,3 +49,7 @@ func add(a, b int){
   fmt.Printf("%d\n", a + b)
 }
 ```
+
+## License
+
+MIT
