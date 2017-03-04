@@ -12,7 +12,7 @@ func TestAddAcceptsHandlerObjectOfTypeFunc(t *testing.T) {
 	c.Add("add", "adds 2 numbers", func(a, b int) {})
 
 	if len(c.commands) < 1 {
-		t.Error("expected 1 command actual %s", len(c.commands))
+		t.Errorf("expected 1 command actual %d", len(c.commands))
 	}
 }
 
@@ -68,7 +68,7 @@ func TestParseBoolAndStringTypes(t *testing.T) {
 
 	c.Add("1", "", func(a bool) {
 		if !a {
-			t.Error("expected true actual %s", strconv.FormatBool(a))
+			t.Errorf("expected true actual %v", strconv.FormatBool(a))
 		}
 	})
 	c.Add("2", "", func(a string) {})
