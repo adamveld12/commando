@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+var errNotSupported = errors.New("not supported")
+
+var parseFuncs = []argParser{
+	parseBaseTypes,
+	parseFloatTypes,
+	parseIntTypes,
+	parseUintTypes,
+}
+
+type argParser func(string, reflect.Kind) (interface{}, error)
+
 type command struct {
 	Names       []string
 	Description string
@@ -133,54 +144,86 @@ func executeHandler(commandString string, handler interface{}, args []string) er
 }
 
 func parseArgument(arg string, paramType reflect.Type) (interface{}, error) {
-	var val interface{} = arg
+	kind := paramType.Kind()
+	var val interface{}
 	var err error
+	for _, parser := range parseFuncs {
+		val, err = parser(arg, kind)
+		if err == errNotSupported {
+			continue
+		} else if err != nil {
+			return nil, fmt.Errorf("expected %s but got %s", paramType.Name(), arg)
+		} else {
+			return val, nil
+		}
+	}
 
-	switch paramType.Kind() {
+	return nil, fmt.Errorf("no idea how to parse %+v", paramType.Name())
+}
+
+func parseBaseTypes(arg string, k reflect.Kind) (val interface{}, err error) {
+	switch k {
+	case reflect.String:
+		val = arg
 	case reflect.Bool:
 		val, err = strconv.ParseBool(arg)
-	case reflect.Float64:
-		val, err = strconv.ParseFloat(arg, 64)
-	case reflect.Float32:
-		val, err = strconv.ParseFloat(arg, 64)
-		val = val.(float32)
-	case reflect.Int:
-		val, err = strconv.Atoi(arg)
-	case reflect.Int8:
-		val, err = strconv.Atoi(arg)
-		val = int8(val.(int))
-	case reflect.Int16:
-		val, err = strconv.Atoi(arg)
-		val = int16(val.(int))
-	case reflect.Int32:
-		val, err = strconv.Atoi(arg)
-		val = int32(val.(int))
-	case reflect.Int64:
-		val, err = strconv.Atoi(arg)
-		val = int64(val.(int))
-	case reflect.Uint:
-		val, err = strconv.ParseUint(arg, 10, 64)
-		val = uint(val.(uint64))
-	case reflect.Uint8:
-		val, err = strconv.ParseUint(arg, 10, 8)
-		val = uint8(val.(uint64))
-	case reflect.Uint16:
-		val, err = strconv.ParseUint(arg, 10, 16)
-		val = uint16(val.(uint64))
-	case reflect.Uint32:
-		val, err = strconv.ParseUint(arg, 10, 32)
-		val = uint32(val.(uint64))
-	case reflect.Uint64:
-		val, err = strconv.ParseUint(arg, 10, 64)
-		val = uint64(val.(uint64))
-	case reflect.String:
 	default:
-		return nil, fmt.Errorf("%s arguments are not supported", paramType.Kind())
+		err = errNotSupported
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("expected %s but got %s", paramType.Name(), arg)
+	return
+
+}
+
+func parseFloatTypes(arg string, k reflect.Kind) (val interface{}, err error) {
+	val, err = strconv.ParseFloat(arg, 64)
+	switch k {
+	case reflect.Float64:
+	case reflect.Float32:
+		val = val.(float32)
+	default:
+		err = errNotSupported
 	}
 
-	return val, nil
+	return
+}
+
+func parseUintTypes(arg string, k reflect.Kind) (val interface{}, err error) {
+	val, err = strconv.ParseUint(arg, 10, 64)
+	valuint := val.(uint64)
+	switch k {
+	case reflect.Uint:
+		val = uint(valuint)
+	case reflect.Uint8:
+		val = uint8(valuint)
+	case reflect.Uint16:
+		val = uint16(valuint)
+	case reflect.Uint32:
+		val = uint32(valuint)
+	case reflect.Uint64:
+	default:
+		err = errNotSupported
+	}
+
+	return
+}
+
+func parseIntTypes(arg string, k reflect.Kind) (val interface{}, err error) {
+	val, err = strconv.ParseInt(arg, 10, 64)
+	valint := val.(int64)
+	switch k {
+	case reflect.Int:
+		val = int(valint)
+	case reflect.Int8:
+		val = int8(valint)
+	case reflect.Int16:
+		val = int16(valint)
+	case reflect.Int32:
+		val = int32(valint)
+	case reflect.Int64:
+	default:
+		err = errNotSupported
+	}
+
+	return val, err
 }
