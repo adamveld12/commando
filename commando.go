@@ -68,11 +68,10 @@ func (c *CommandMux) Add(names, description string, handlerFunc interface{}) {
 		panic("Didn't pass a func")
 	}
 
-	cmd := command{strings.Split(names, " "), description, handlerFunc}
-	c.commands = append(c.commands, cmd)
+	command := command{strings.Split(names, " "), description, handlerFunc}
+	c.commands = append(c.commands, command)
 }
 
-// Execute executes a command that best matches the arguments passed
 func (c *CommandMux) Execute(args ...string) error {
 	argc := len(args)
 
@@ -94,7 +93,7 @@ func (c *CommandMux) Execute(args ...string) error {
 		}
 	}
 
-	return fmt.Errorf("\"%s\" is not a recognized command", commandString)
+	return errors.New(fmt.Sprintf("\"%s\" is not a recognized command", commandString))
 }
 
 func handlerArguments(handler interface{}) []reflect.Type {
@@ -112,7 +111,6 @@ func handlerArguments(handler interface{}) []reflect.Type {
 
 func executeHandler(commandString string, handler interface{}, args []string) error {
 	handlerType := reflect.TypeOf(handler)
-
 	numIn := handlerType.NumIn()
 
 	if numIn != len(args) {
@@ -120,64 +118,69 @@ func executeHandler(commandString string, handler interface{}, args []string) er
 	}
 
 	inputArgs := []reflect.Value{}
-
 	for i, paramType := range handlerArguments(handler) {
-		argStr := args[i]
-
-		var val interface{} = argStr
-		var err error
-
-		switch paramType.Kind() {
-		case reflect.Bool:
-			val, err = strconv.ParseBool(argStr)
-		case reflect.Float64:
-			val, err = strconv.ParseFloat(argStr, 64)
-		case reflect.Float32:
-			val, err = strconv.ParseFloat(argStr, 64)
-			val = val.(float32)
-		case reflect.Int:
-			val, err = strconv.Atoi(argStr)
-		case reflect.Int8:
-			val, err = strconv.Atoi(argStr)
-			val = int8(val.(int))
-		case reflect.Int16:
-			val, err = strconv.Atoi(argStr)
-			val = int16(val.(int))
-		case reflect.Int32:
-			val, err = strconv.Atoi(argStr)
-			val = int32(val.(int))
-		case reflect.Int64:
-			val, err = strconv.Atoi(argStr)
-			val = int64(val.(int))
-		case reflect.Uint:
-			val, err = strconv.ParseUint(argStr, 10, 64)
-			val = uint(val.(uint64))
-		case reflect.Uint8:
-			val, err = strconv.ParseUint(argStr, 10, 8)
-			val = uint8(val.(uint64))
-		case reflect.Uint16:
-			val, err = strconv.ParseUint(argStr, 10, 16)
-			val = uint16(val.(uint64))
-		case reflect.Uint32:
-			val, err = strconv.ParseUint(argStr, 10, 32)
-			val = uint32(val.(uint64))
-		case reflect.Uint64:
-			val, err = strconv.ParseUint(argStr, 10, 64)
-			val = uint64(val.(uint64))
-		case reflect.String:
-			val = argStr
-		default:
-			panic(fmt.Sprintf("%s arguments are not supported", paramType.Kind()))
-		}
-
+		val, err := parseArgument(args[i], paramType)
 		if err != nil {
-			return fmt.Errorf("\"%s\" expects %s but got %s", commandString, paramType.Name(), argStr)
+			return err
 		}
 
 		inputArgs = append(inputArgs, reflect.ValueOf(val))
 	}
 
 	reflect.ValueOf(handler).Call(inputArgs)
-
 	return nil
+}
+
+func parseArgument(arg string, paramType reflect.Type) (interface{}, error) {
+	var val interface{} = arg
+	var err error
+
+	switch paramType.Kind() {
+	case reflect.Bool:
+		val, err = strconv.ParseBool(arg)
+	case reflect.Float64:
+		val, err = strconv.ParseFloat(arg, 64)
+	case reflect.Float32:
+		val, err = strconv.ParseFloat(arg, 64)
+		val = val.(float32)
+	case reflect.Int:
+		val, err = strconv.Atoi(arg)
+	case reflect.Int8:
+		val, err = strconv.Atoi(arg)
+		val = int8(val.(int))
+	case reflect.Int16:
+		val, err = strconv.Atoi(arg)
+		val = int16(val.(int))
+	case reflect.Int32:
+		val, err = strconv.Atoi(arg)
+		val = int32(val.(int))
+	case reflect.Int64:
+		val, err = strconv.Atoi(arg)
+		val = int64(val.(int))
+	case reflect.Uint:
+		val, err = strconv.ParseUint(arg, 10, 64)
+		val = uint(val.(uint64))
+	case reflect.Uint8:
+		val, err = strconv.ParseUint(arg, 10, 8)
+		val = uint8(val.(uint64))
+	case reflect.Uint16:
+		val, err = strconv.ParseUint(arg, 10, 16)
+		val = uint16(val.(uint64))
+	case reflect.Uint32:
+		val, err = strconv.ParseUint(arg, 10, 32)
+		val = uint32(val.(uint64))
+	case reflect.Uint64:
+		val, err = strconv.ParseUint(arg, 10, 64)
+		val = uint64(val.(uint64))
+	case reflect.String:
+		val = arg
+	default:
+		return nil, fmt.Errorf("%s arguments are not supported", paramType.Kind())
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("expected %s but got %s", paramType.Name(), arg)
+	}
+
+	return val, nil
 }
