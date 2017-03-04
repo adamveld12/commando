@@ -68,10 +68,11 @@ func (c *CommandMux) Add(names, description string, handlerFunc interface{}) {
 		panic("Didn't pass a func")
 	}
 
-	command := command{strings.Split(names, " "), description, handlerFunc}
-	c.commands = append(c.commands, command)
+	cmd := command{strings.Split(names, " "), description, handlerFunc}
+	c.commands = append(c.commands, cmd)
 }
 
+// Execute executes a command (specified in arg[0]) passing in the remaining arguments as parameters (arg[1:])
 func (c *CommandMux) Execute(args ...string) error {
 	argc := len(args)
 
@@ -93,7 +94,7 @@ func (c *CommandMux) Execute(args ...string) error {
 		}
 	}
 
-	return errors.New(fmt.Sprintf("\"%s\" is not a recognized command", commandString))
+	return fmt.Errorf("\"%s\" is not a recognized command", commandString)
 }
 
 func handlerArguments(handler interface{}) []reflect.Type {
@@ -173,7 +174,6 @@ func parseArgument(arg string, paramType reflect.Type) (interface{}, error) {
 		val, err = strconv.ParseUint(arg, 10, 64)
 		val = uint64(val.(uint64))
 	case reflect.String:
-		val = arg
 	default:
 		return nil, fmt.Errorf("%s arguments are not supported", paramType.Kind())
 	}
